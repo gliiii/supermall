@@ -32,11 +32,11 @@ import NavBar from 'components/common/navbar/NavBar';
 import TabControl from 'components/content/tabControl/TabControl'
 import GoodList from 'components/content/goods/GoodsList'
 import Scroll from "@/components/common/scroll/Scroll";
-import BackTop from "@/components/content/backTop/BackTop";
+// import BackTop from "@/components/content/backTop/BackTop";
 
-import { getHomeMultidata, getHomeGoods } from "network/home"
-import {debounce} from "common/utils";
-
+import { getHomeMultidata, getHomeGoods, RECOMMEND, BANNER } from "network/home"
+import {itemListenerMinxin, backTopMixin} from "common/mixin";
+import {NEW, POP, SELL, BACKTOP_DISTANCE} from "common/const";
 
 
 export default {
@@ -49,8 +49,9 @@ export default {
     TabControl,
     GoodList,
     Scroll,
-    BackTop,
+    // BackTop,
   },
+  mixins: [itemListenerMinxin, backTopMixin],
   data() {
     return {
       banners: [],
@@ -60,11 +61,12 @@ export default {
         'new': {page: 0, list: []},
         'sell': {page: 0, list: []},
       },
-      currentType: 'pop',
-      isShowBackTop: false,
+      currentType: POP,
+      // isShowBackTop: false,
       tabOffsetTop: 0,
       isTabFixed: false,
-      saveY: 0
+      saveY: 0,
+      itemImageListener: null
     }
   },
   computed: {
@@ -77,9 +79,9 @@ export default {
     this.getHomeMultidata()
 
     // 2.请求商品数据
-    this.getHomeGoods('pop')
-    this.getHomeGoods('new')
-    this.getHomeGoods('sell')
+    this.getHomeGoods(POP)
+    this.getHomeGoods(NEW)
+    this.getHomeGoods(SELL)
 
   },
   activated() {
@@ -87,14 +89,15 @@ export default {
     this.$refs.scroll.refresh()
   },
   deactivated() {
+    //1.保存Y值
     this.saveY = this.$refs.scroll.getScrollY()
+    //2.取消全局事件的监听
+    this.$bus.$off('itemImageLoad', this.itemImageListener)
   },
   mounted() {
-    const refresh = debounce(this.$refs.scroll.refresh, 50)
-    this.$bus.$on('itemImageLoad', () => {
-      // this.$refs.scroll.refresh()
-      refresh()
-    })
+
+
+
   },
   methods: {
     /**
@@ -103,13 +106,13 @@ export default {
     tabClick(index) {
       switch (index) {
         case 0:
-          this.currentType = 'pop'
+          this.currentType = POP
           break
         case 1:
-          this.currentType = 'new'
+          this.currentType = NEW
           break
         case 2:
-          this.currentType = 'sell'
+          this.currentType = SELL
           break
       }
 
@@ -117,13 +120,13 @@ export default {
       // this.$refs.tabControl2.currentIndex = index;
 
     },
-    backClick() {
-      this.$refs.scroll.scrollTo(0,0)
-    },
+    // backClick() {
+    //   this.$refs.scroll.scrollTo(0,0)
+    // },
     contentScroll(position) {
       // 1.判断BackTop是否显示
-      this.isShowBackTop = (-position.y) > 1000
-
+      // this.isShowBackTop = (-position.y) > BACKTOP_DISTANCE
+      this.listenShowBackTop(position)
       // 2.决定tabControl是否吸顶(position: fixed)
       this.isTabFixed = (-position.y) > this.tabOffsetTop
 
@@ -134,6 +137,10 @@ export default {
     swiperImageLoad() {
       this.tabOffsetTop = this.$refs.tabControl2.$el.offsetTop;
     },
+    // itemImageListener() {
+    //   console.log('刷新');
+    //   debounce(this.$refs.scroll.refresh, 50)
+    // },
 
     /**
      * 网络请求相关的方法
@@ -141,8 +148,8 @@ export default {
     getHomeMultidata() {
       getHomeMultidata().then(res => {
         // this.result = res;
-        this.banners = res.data.banner.list;
-        this.recommends = res.data.recommend.list;
+        this.banners = res.data[BANNER].list;
+        this.recommends = res.data[RECOMMEND].list;
       })
     },
     getHomeGoods(type) {

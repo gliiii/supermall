@@ -43,7 +43,6 @@
 
       // 3.监听上拉事件
       this.scroll.on('pullingUp', () => {
-        console.log('------');
         this.$emit('pullingUp')
       })
     },
@@ -52,7 +51,6 @@
         this.scroll && this.scroll.scrollTo(x, y, time)
       },
       refresh() {
-        console.log('------');
         this.scroll && this.scroll.refresh()
       },
       finishPullUp() {
