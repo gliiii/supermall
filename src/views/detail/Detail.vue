@@ -10,7 +10,7 @@
       <detail-comment-info  ref="comment" :comment-info="commentInfo"/>
       <goods-list ref="recommend" :goods="recommends"/>
     </scroll>
-    <detail-bottom-bar/>
+    <detail-bottom-bar @addToCart="addToCart"/>
     <back-top @click.native="backClick" v-show="isShowBackTop"></back-top>
   </div>
 </template>
@@ -31,7 +31,7 @@ import GoodsList from "components/content/goods/GoodsList";
 import {itemListenerMinxin, backTopMixin} from "common/mixin";
 import {getDetail, getRecommend, Goods, Shop, GoodsParam} from "network/detail";
 import {debounce} from "common/utils";
-
+import {mapActions} from "vuex"
 
 export default {
   name: "Detail",
@@ -136,6 +136,9 @@ export default {
     this.$bus.$off('itemImageLoad', this.itemImageListener)
   },
   methods: {
+
+    ...mapActions(['addCart']),
+
     imageLoad() {
       this.$refs.scroll.refresh()
       this.getThemeTopY()
@@ -176,6 +179,26 @@ export default {
 
       }
 
+    },
+    addToCart() {
+      // 1.创建对象
+      const obj = {}
+      // 2.对象信息
+      obj.iid = this.iid;
+      obj.imgURL = this.topImages[0]
+      obj.title = this.goods.title
+      obj.desc = this.goods.desc;
+      obj.newPrice = this.goods.nowPrice;
+      // 3.添加到Store中
+
+      this.addCart(obj).then(res => {
+        console.log(res);
+        this.$toast.show(res)
+      })
+
+      // this.$store.dispatch('addCart', obj).then(res => {
+      //   console.log(res)
+      // })
     }
   }
 }
